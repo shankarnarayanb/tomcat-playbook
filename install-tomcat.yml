@@ -3,6 +3,7 @@
   hosts: webserver
   become: yes
   become_method: sudo
+  gather_facts: true
   
   vars:
     tomcat_major_version: 8
@@ -27,17 +28,19 @@
     register: bashrc_result
   
   - name: jdk variable configuration in .bashrc file
-    shell:
-          shell: /bin/echo {{ item }} >> ~/.bashrc; source ~/.bashrc
+    shell: /bin/echo {{ item }} >> ~/.bashrc; source ~/.bashrc
     with_items:
      - export JAVA_HOME=/usr/java/jdk-{{ jdk_version }}
      - export PATH=$PATH:/usr/java/jdk-{{ jdk_version }}/bin
-     
+  
+  - name: Env check
+    debug:
+        msg: "{{ ansible_env }}"
+    
   - name: Java check
     command:
         java -version
     register: java_installed
-
 
   - name: Add "tomcat" group
     group:
