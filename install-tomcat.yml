@@ -11,21 +11,33 @@
     ui_manager_pass: us3rp@ssw0rd
     ui_admin_username: admin
     ui_admin_pass: sh@nk@1@1ssw0rd
-    JAVA_HOME: /usr/
+    JAVA_HOME: /usr/java/jdk-8
     tomcat_folder: tomcat1
     shut_down_port: 8005
     connector_port: 8080
     connector_redirect_port: 8443
     AJP_connector_port: 8009
     AJP_connector_redirect_port: 8345
+    jdk_version: 8
 
   tasks:
-
+  - name: check jdk variable
+    shell:
+        cat ~/.bashrc
+    register: bashrc_result
+  
+  - name: jdk variable configuration in .bashrc file
+    shell:
+          shell: /bin/echo {{ item }} >> ~/.bashrc; source ~/.bashrc
+    with_items:
+     - export JAVA_HOME=/usr/java/jdk-{{ jdk_version }}
+     - export PATH=$PATH:/usr/java/jdk-{{ jdk_version }}/bin
+     
   - name: Java check
     command:
         java -version
     register: java_installed
-    failed_when: "-bash: java: command not found"
+
 
   - name: Add "tomcat" group
     group:
