@@ -1,0 +1,14 @@
+[webserver]
+web ansible_ssh_host=94.237.53.201  ansible_user=root
+
+[dbserver]
+db ansible_ssh_host=94.237.53.248  ansible_user=root
+
+# Group 'multi' with all servers
+[multi:children]
+webserver
+dbserver
+
+#block adds variables to the multi group that will be applied to all servers within multi and all its children
+[multi:vars]
+ansible_user=root

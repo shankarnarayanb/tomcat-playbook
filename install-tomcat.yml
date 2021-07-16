@@ -1,0 +1,103 @@
+---
+- name: Tasks to install Tomcat
+  hosts: webserver
+  become: yes
+  become_method: sudo
+  
+  vars:
+    tomcat_major_version: 8
+    tomcat_ver: 8.5.42
+    ui_manager_user: manager
+    ui_manager_pass: us3rp@ssw0rd
+    ui_admin_username: admin
+    ui_admin_pass: sh@nk@1@1ssw0rd
+    JAVA_HOME: /usr/
+    tomcat_folder: tomcat1
+    shut_down_port: 8005
+    connector_port: 8080
+    connector_redirect_port: 8443
+    AJP_connector_port: 8009
+    AJP_connector_redirect_port: 8345
+
+  tasks:
+
+  - name: Java check
+    command:
+        java -version
+    register: java_installed
+    failed_when: "-bash: java: command not found"
+
+  - name: Add "tomcat" group
+    group:
+      name: tomcat
+
+  - name: Add "tomcat" user
+    user:
+      name: tomcat
+      group: tomcat
+      home: /usr/share/tomcat
+      createhome: no
+      system: yes
+
+  - name: Download Tomcat
+    get_url:
+      url: https://archive.apache.org/dist/tomcat/tomcat-{{ tomcat_major_version }}/v{{ tomcat_ver }}/bin/apache-tomcat-{{ tomcat_ver }}.tar.gz
+      dest: /tmp/apache-tomcat-{{ tomcat_ver }}.tar.gz
+
+
+  - name: Create a tomcat directory
+    file:
+      path: /usr/share/{{ tomcat_folder }}
+      state: directory
+      owner: tomcat
+      group: tomcat
+
+  - name: Extract tomcat archive
+    unarchive:
+      src: /tmp/apache-tomcat-{{ tomcat_ver }}.tar.gz
+      dest: /usr/share/{{ tomcat_folder }}
+      owner: tomcat
+      group: tomcat
+      remote_src: yes
+      extra_opts: "--strip-components=1"
+      creates: /usr/share/{{ tomcat_folder }}/bin
+
+  - name: Copy tomcat service file
+    template:
+      src: tomcat.service.j2
+      dest: /etc/systemd/system/{{ tomcat_folder }}.service
+    when: ansible_service_mgr == "systemd"
+
+  - name: Start and enable tomcat
+    service:
+      daemon_reload: yes
+      name: "{{ tomcat_folder }}"
+      state: started
+      enabled: yes
+    when: ansible_service_mgr == "systemd"
+
+  - name: Set GUI access credentials
+    template:
+      src: tomcat-users.xml.j2
+      dest: /usr/share/{{ tomcat_folder }}/conf/tomcat-users.xml
+    notify: restart tomcat
+
+  - name: Server xml to be copied
+    template:
+      src: server.xml
+      dest: /usr/share/{{ tomcat_folder }}/conf/server.xml
+    notify: restart tomcat
+
+  - name: Allow access to Manager and Host Manager apps from any IP
+    template:
+      src: context.xml.j2
+      dest: "{{ item }}"
+    with_items:
+      - /usr/share/{{ tomcat_folder }}/webapps/host-manager/META-INF/context.xml
+      - /usr/share/{{ tomcat_folder }}/webapps/manager/META-INF/context.xml
+
+  handlers:
+    - name: restart tomcat
+      service:
+        name: "{{ tomcat_folder }}"
+        state: restarted
