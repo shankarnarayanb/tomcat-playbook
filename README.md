@@ -6,7 +6,7 @@
 - Ability to configure ports independently on both instances
 - Works with Zulu JDK and can be ported to work with Oracle JDK or Open JDK
 
-### TODO: Add a JDK install step in the playbook if not found.
+#### TODO: Add a JDK install step in the playbook if not found.
 
 ## Installation
 
