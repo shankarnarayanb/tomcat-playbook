@@ -99,7 +99,7 @@
 
   - name: Server xml to be copied
     template:
-      src: server.xml
+      src: server.xml.j2
       dest: /usr/share/{{ tomcat_folder }}/conf/server.xml
     notify: restart tomcat
 
